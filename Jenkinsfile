@@ -42,7 +42,7 @@ pipeline {
                     --version-label ${env.BUILD_ID} --source-bundle S3Bucket=$S3_BUCKET,S3Key=app.zip --region $AWS_REGION
 
                     aws elasticbeanstalk update-environment --application-name $APP_NAME \
-                    --environment-name your-env-name --version-label ${env.BUILD_ID} --region $AWS_REGION
+                    --environment-name Jenkins0311-env --version-label ${env.BUILD_ID} --region $AWS_REGION
                     """
                 }
             }
