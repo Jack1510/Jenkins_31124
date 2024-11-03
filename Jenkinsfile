@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Jack1510/Jenkins_31124.git'
+                git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/Jack1510/Jenkins_31124.git'
             }
         }
 
@@ -18,14 +18,25 @@ pipeline {
             steps {
                 script {
                     sh 'zip -r app.zip ./*'         // Package all files in the directory
-                    sh "aws s3 cp app.zip s3://$S3_BUCKET/app.zip --region $AWS_REGION"  // Upload to S3
+                }
+            }
+        }
+
+        stage('Upload to S3') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'aws-access', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh """
+                    aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+                    aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+                    aws s3 cp app.zip s3://$S3_BUCKET/app.zip --region $AWS_REGION
+                    """
                 }
             }
         }
 
         stage('Deploy to AWS Elastic Beanstalk') {
             steps {
-                script {
+                withCredentials([usernamePassword(credentialsId: 'aws-access', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh """
                     aws elasticbeanstalk create-application-version --application-name $APP_NAME \
                     --version-label ${env.BUILD_ID} --source-bundle S3Bucket=$S3_BUCKET,S3Key=app.zip --region $AWS_REGION
